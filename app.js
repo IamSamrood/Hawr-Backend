@@ -5,6 +5,8 @@ import bodyParser from 'body-parser';
 import connectDB from './db/db.js';
 import Email from './models/email.js';
 
+const port = process.env.PORT || 3000;
+
 
 const app = express();
 app.use(cors());
@@ -49,6 +51,6 @@ app.post('/subscribe', async (req, res) => {
 
 
 
-app.listen(3000, () => {
+app.listen(port, () => {
     console.log('Listening to 3000!!');
 });
