@@ -6,6 +6,8 @@ import connectDB from './db/db.js';
 import Email from './models/email.js';
 import HawrEmail from './models/hawr-email.js';
 
+const port = process.env.PORT || 3000;
+
 
 const app = express();
 app.use(cors());
@@ -80,6 +82,6 @@ app.post('/hawr-subscribe', async (req, res) => {
 
 
 
-app.listen(3000, () => {
+app.listen(port, () => {
     console.log('Listening to 3000!!');
 });
