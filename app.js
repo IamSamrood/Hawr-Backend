@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import connectDB from './db/db.js';
 import Email from './models/email.js';
 import HawrEmail from './models/hawr-email.js';
+import contactRoutes from './routes/contact-routes.js';
 
 const port = process.env.PORT || 3000;
 
@@ -77,7 +78,9 @@ app.post('/hawr-subscribe', async (req, res) => {
         console.error('Error subscribing email:', error);
         res.status(500).json({ error: error });
     }
-})
+});
+
+app.use('/contact', contactRoutes);
 
 
 
