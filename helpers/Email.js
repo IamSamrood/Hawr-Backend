@@ -18,8 +18,8 @@ export async function sendEmail(data) {
 
     // Email message options
     const mailOptions = {
-        from: 'muhammedresvan@gmail.com',
-        to: data.email,
+        from: data.email,
+        to: 'contact@gnanaprakasam.com',
         subject: 'Enquiry Email',
         html: emailHtml,
     };
