@@ -30,4 +30,49 @@ router.post('/book-appointment', async (req, res) => {
     }
 });
 
+
+router.put('/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        // Find the appointment by ID
+        const appointment = await Appointment.findById(id);
+
+        if (!appointment) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+
+        // Update the status
+        appointment.status = status;
+
+        // Save the updated appointment
+        await appointment.save();
+
+        res.status(200).json({ message: 'Appointment status updated', appointment });
+
+    } catch (error) {
+        console.error('Error updating appointment status', error);
+        res.status(500).json({ error: 'Error updating appointment status' });
+    }
+});
+
+router.get('/booked-appointments/:doctor', async (req, res) => {
+
+
+    try {
+        const { doctor } = req.params;
+
+        // Find the appointment by ID
+        const appointment = await Appointment.find({ doctor }, 'time');
+
+
+        res.status(200).json({ appointment: appointment });
+
+    } catch (error) {
+        console.error('Error updating appointment status', error);
+        res.status(500).json({ error: 'Error updating appointment status' });
+    }
+});
+
 export default router;
