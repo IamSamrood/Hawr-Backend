@@ -6,6 +6,7 @@ import connectDB from './db/db.js';
 import Email from './models/email.js';
 import HawrEmail from './models/hawr-email.js';
 import contactRoutes from './routes/contact-routes.js';
+import appointmentRouts from './routes/appointment-routes.js';
 
 const port = process.env.PORT || 3000;
 
@@ -81,6 +82,7 @@ app.post('/hawr-subscribe', async (req, res) => {
 });
 
 app.use('/contact', contactRoutes);
+app.use('/appointment', appointmentRouts);
 
 
 
