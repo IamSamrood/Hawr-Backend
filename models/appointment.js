@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 
-const { Schema } = mongoose;
 
 const appointmentSchema = new mongoose.Schema({
     name: {

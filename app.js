@@ -2,11 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
 import bodyParser from 'body-parser';
-import connectDB from './db/db.js';
+import connectDB from './config/db.js';
 import Email from './models/email.js';
 import HawrEmail from './models/hawr-email.js';
 import contactRoutes from './routes/contact-routes.js';
-import appointmentRouts from './routes/appointment-routes.js';
+import appointmentRoutes from './routes/appointment-routes.js';
+import productRoutes from './routes/product-routes.js';
+import categroyRoutes from './routes/category-routes.js';
+import fileRoutes from './routes/fileUpload-routes.js';
 
 const port = process.env.PORT || 3000;
 
@@ -14,6 +17,9 @@ const port = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}))
 
 config();
 connectDB();
@@ -82,11 +88,13 @@ app.post('/hawr-subscribe', async (req, res) => {
 });
 
 app.use('/contact', contactRoutes);
-app.use('/appointment', appointmentRouts);
+app.use('/appointment', appointmentRoutes);
 
-
+app.use('/product', productRoutes);
+app.use('/categroy', categroyRoutes);
+app.use('/file', fileRoutes);
 
 
 app.listen(port, () => {
-    console.log('Listening to 3000!!');
+    console.log(`Listening to ${port}!!`);
 });

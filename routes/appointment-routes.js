@@ -57,21 +57,33 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
-router.get('/booked-appointments/:doctor', async (req, res) => {
-
+router.get('/booked-appointments/:doctor/:date', async (req, res) => {
 
     try {
-        const { doctor } = req.params;
+        const { doctor, date } = req.params;
+        
+        const appointments = await Appointment.find({
+            date,
+            doctor,
+            status: { $ne: "pending" }
+        }, 'time');
 
-        // Find the appointment by ID
-        const appointment = await Appointment.find({ doctor }, 'time');
-
-
-        res.status(200).json({ appointment: appointment });
+        res.status(200).json({ appointment: appointments });
 
     } catch (error) {
         console.error('Error updating appointment status', error);
         res.status(500).json({ error: 'Error updating appointment status' });
+    }
+});
+
+router.get('/get-appointments', async (req, res) => {
+    try {
+        
+        let appointments = await Appointment.find();
+        res.status(200).json({ appointments: appointments });
+    } catch (error) {
+        console.error('Error getting appointments', error);
+        res.status(500).json({ error: 'Error getting appointments' });
     }
 });
 
