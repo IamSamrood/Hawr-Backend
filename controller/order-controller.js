@@ -84,6 +84,8 @@ export const createOrder = async (req, res) => {
                 currency: 'INR', // Change to your currency
                 receipt: savedOrder._id.toString() // Use order ID as receipt ID
             });
+        } else {
+            orderObj.id = savedOrder._id;
         }
         
         
@@ -145,6 +147,21 @@ export const getOrdersByUser = async (req, res) => {
 
 
         res.status(200).json({ orders });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ message: "Failed to fetch orders" });
+    }
+};
+
+export const getOrderById = async (req, res) => {
+    try {
+        const orderId = req.query.id;
+
+        const order = await Order.findById(orderId);
+
+
+
+        res.status(200).json({ order });
     } catch (error) {
         console.error("Error fetching orders:", error);
         res.status(500).json({ message: "Failed to fetch orders" });

@@ -57,13 +57,15 @@ export const getProducts = async (req, res) => {
         const maxPrice = parseFloat(req.body.price[1]) || Number.MAX_SAFE_INTEGER;
 
         // Sorting
-        let sort = { name: 1 }; // Default sort by name
+        let sort = { 'product.name': 1 }; // Default sort by name
         const sortBy = req.body.sortBy || '';
+
         if (sortBy === 'priceLowToHigh') {
-            sort = { price: 1 };
+            sort = { 'product.price': 1, 'product.name': 1 };
         } else if (sortBy === 'priceHighToLow') {
-            sort = { price: -1 };
+            sort = { 'product.price': -1, 'product.name': 1 };
         }
+
 
         // Building initial match query
         const query = {};
@@ -119,12 +121,15 @@ export const getProducts = async (req, res) => {
             { $limit: limit }
         ];
 
-
+      
+        console.log(
+            sort
+        );
 
         // Fetching products with pagination, search, and filters using aggregation
         const products = await Product.aggregate(aggregatePipeline);
 
-
+        
 
         // Sending response
         res.status(200).json({
