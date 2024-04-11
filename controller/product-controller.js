@@ -1,9 +1,10 @@
 import Product from "../models/product.js";
+import mongoose from 'mongoose';
 
 export const addProduct = async (req, res) => {
     try {
         // Extract product details from request body
-        const { name, sizes, description, images, code, price, category, offer } = req.body;
+        const { name, sizes, description, images, code, category, offer } = req.body;
 
         // Create new product data object with required fields
         const newProductData = {
@@ -12,15 +13,17 @@ export const addProduct = async (req, res) => {
             description,
             images,
             code,
-            price,
             category,
-            actualPrice: price
         };
 
         // Add offer to new product data if it exists in the request body
         if (offer !== undefined) {
             newProductData.offer = offer;
-            newProductData.price = price - price * offer / 100;
+            newProductData.sizes = sizes.map(size => ({
+                ...size,
+                actualPrice: size.price,
+                price: size.price - (size.price * offer / 100),
+            }));
         }
 
         // Create new product
@@ -38,6 +41,7 @@ export const addProduct = async (req, res) => {
 }
 export const getProducts = async (req, res) => {
     try {
+        
         // Pagination parameters
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -53,17 +57,17 @@ export const getProducts = async (req, res) => {
         const sizes = req.body.size || [];
 
         // Price range filter
-        const minPrice = parseFloat(req.body.price[0]) || 0;
-        const maxPrice = parseFloat(req.body.price[1]) || Number.MAX_SAFE_INTEGER;
+        const minPrice = parseFloat(req.body.price?.[0]) || 0;
+        const maxPrice = parseFloat(req.body.price?.[1]) || Number.MAX_SAFE_INTEGER;
 
         // Sorting
         let sort = { 'product.name': 1 }; // Default sort by name
         const sortBy = req.body.sortBy || '';
 
         if (sortBy === 'priceLowToHigh') {
-            sort = { 'product.price': 1, 'product.name': 1 };
+            sort = { 'product.sizes.price': 1, 'product.name': 1 };
         } else if (sortBy === 'priceHighToLow') {
-            sort = { 'product.price': -1, 'product.name': 1 };
+            sort = { 'product.sizes.price': -1, 'product.name': 1 };
         }
 
 
@@ -78,7 +82,11 @@ export const getProducts = async (req, res) => {
             query.category = { $in: categories.map(category => new mongoose.Types.ObjectId(category)) }; // Filter by categories
         }
 
-        query.price = { $gte: minPrice, $lte: maxPrice };
+        query.sizes = {
+            $elemMatch: {
+                price: { $gte: minPrice, $lte: maxPrice }
+            }
+        };
 
         // Filter by sizes
         if (sizes.length > 0) {
@@ -103,7 +111,7 @@ export const getProducts = async (req, res) => {
 
 
 
-
+        
         // Aggregate pipeline for summing quantities in sizes array
         const aggregatePipeline = [
             { $match: query },
@@ -118,13 +126,26 @@ export const getProducts = async (req, res) => {
             { $match: availQuery }, // Filter based on sum of quantities
             { $sort: sort },
             { $skip: skip },
-            { $limit: limit }
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: "categories", // Name of the category collection
+                    localField: "product.category", // Field in the current collection
+                    foreignField: "_id", // Field in the category collection
+                    as: "product.category" // Name for the joined field
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: {
+                        $mergeObjects: ["$product", { category: { $arrayElemAt: ["$product.category", 0] } }]
+                    }
+                }
+            }
         ];
 
       
-        console.log(
-            sort
-        );
+      
 
         // Fetching products with pagination, search, and filters using aggregation
         const products = await Product.aggregate(aggregatePipeline);
@@ -143,7 +164,6 @@ export const getProducts = async (req, res) => {
     }
 }
 export const getUniqueProductSizes = async (req, res) => {
-    console.log('api call');
     try {
         // Aggregate pipeline to get unique product sizes
         const uniqueSizes = await Product.aggregate([
@@ -165,7 +185,7 @@ export const getUniqueProductSizes = async (req, res) => {
             }
         ]);
 
-        console.log(uniqueSizes);
+        
         // Send the unique sizes as the response
         res.status(200).json({
             uniqueSizes,

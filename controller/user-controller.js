@@ -7,9 +7,9 @@ import User from "../models/user.js";
 export const register = async (req, res) => {
     try {
         const {
-            userName,
+            firstName,
+            lastName,
             email,
-            phone,
             password
 
         } = req.body;
@@ -20,10 +20,10 @@ export const register = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         const newUser = new User({
-            userName,
+            firstName,
+            lastName,
             email,
             password: passwordHash,
-            phone
         });
         const savedUser = await newUser.save();
         res.status(201).json(savedUser);
@@ -51,3 +51,52 @@ export const login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+export const getUserProfile =async (req, res) => {
+    try {
+        const { id } = req.user;
+        
+        const user = await User.findById(id);
+
+        if (!user)
+            return res.status(400).json({ message: "User Not Found" });
+
+        res.status(200).json({ user, message: 'Success' });
+    } catch (error) {
+        console.log(err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export const updateUserProfile = async (req, res) => {
+    try {
+        // Extract the user ID from the request
+        const { id } = req.user;
+
+        const { firstName, lastName, gender, phone, email } = req.body;
+
+        // Find the user by ID in the database
+        let user = await User.findById(id);
+
+        // If user not found, return error
+        if (!user) {
+            return res.status(400).json({ message: "User Not Found" });
+        }
+
+        // Update user information with the data from the request body
+        user.firstName = firstName;
+        user.lastName = lastName;
+        user.phone = phone;
+        user.gender = gender;
+        
+
+        // Save the updated user information to the database
+        user = await user.save();
+
+        // Return success response
+        res.status(200).json({ user, message: 'User updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}

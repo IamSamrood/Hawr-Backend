@@ -22,6 +22,12 @@ const cartSchema = new Schema({
         },
         size: {
             type: String,
+        },
+        price: {
+            type:Number
+        },
+        actualPrice: {
+            type:Number
         }
     }]
 });

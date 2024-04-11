@@ -2,6 +2,7 @@ import Cart from "../models/cart.js";
 import Order from "../models/order.js";
 import Razorpay from "razorpay";
 import crypto from 'crypto';
+import Coupon from "../models/coupon.js";
 
 
 const razorpay = new Razorpay({
@@ -19,38 +20,45 @@ export const createOrder = async (req, res) => {
             email, firstName,
             lastName, note,
             phone, pincode,
-            street, paymentMethod
+            street, paymentMethod, coupon
         } = req.body;
 
         const cart = await Cart.findOne({ userId: id })
                                 .populate('items.productId');
         // Extracting complete product data from the cart
-        const items = cart.items.map(cartItem => ({
-            productId: cartItem.productId._id,
-            name: cartItem.productId.name,
-            price: cartItem.productId.price,
-            actualPrice: cartItem.productId.actualPrice,
-            images: cartItem.productId.images,
-            code: cartItem.productId.code,
-            quantity: cartItem.quantity,
-            size: cartItem.size
-        }));
-        
+        const items = cart.items.map(cartItem => {
+            return {
+                productId: cartItem.productId._id,
+                name: cartItem.productId.name,
+                price: cartItem.price,
+                actualPrice: cartItem.actualPrice,
+                images: cartItem.productId.images,
+                code: cartItem.productId.code,
+                quantity: cartItem.quantity,
+                size: cartItem.size
+            };
+        });
+
 
             
         // Calculate the total amount
         const totalAmount = cart.items.reduce((total, item) => {
-            return total + (item.productId.price * item.quantity);
+            // Add the price of the item to the total
+            return total + (item.price * item.quantity);
         }, 0);
 
-        // Calculate the total amount
+
+        // Calculate the total discount
         const discount = cart.items.reduce((total, item) => {
-            return total + ((item.productId.actualPrice - item.productId.price) * item.quantity);
+
+            // Calculate the discount for the item and add it to the total
+            return total + ((item.actualPrice - item.price) * item.quantity);
         }, 0);
+
 
         
 
-        const order = new Order({
+        let orederObject = {
             userId: id,
             items,
             address: {
@@ -69,13 +77,35 @@ export const createOrder = async (req, res) => {
             paymentMethod,
             note,
             totalAmount,
-            totalDiscount: discount
-        });
+            totalDiscount: discount,
+              
+        }
+
+        if (paymentMethod == 'cashOnDelivery') {
+            orederObject.deliveryStatus = 'Placed';
+        }
+
+        if (coupon) {
+            let getCoupon = await Coupon.findOne({ code: coupon });
+            
+            if (getCoupon) {
+
+                let coupondis = totalAmount * getCoupon.offer / 100;
+
+                orederObject.totalAmount = totalAmount - coupondis;
+                orederObject.couponDiscount = coupondis;
+                orederObject.coupon = getCoupon.code;
+
+            }
+
+        }
+
+        const order = new Order(orederObject);
 
         const savedOrder = await order.save();
 
 
-        let orderObj;
+        let orderObj = {};
 
         if (paymentMethod === 'razorpay') {
             // If order is saved successfully, create an order in Razorpay
@@ -86,6 +116,14 @@ export const createOrder = async (req, res) => {
             });
         } else {
             orderObj.id = savedOrder._id;
+
+            const deleteCart = await Cart.findOneAndDelete({ userId: id });
+
+            const myCoupon = await Coupon.findOne({ code: coupon });
+
+            myCoupon.users.set(id, true);
+
+            await myCoupon.save();
         }
         
         
@@ -107,6 +145,7 @@ export const paymentSuccess = async (req, res) => {
             razorpay_payment_id,
             razorpay_order_id,
             razorpay_signature,
+            coupon
         } = req.body;
 
 
@@ -129,12 +168,18 @@ export const paymentSuccess = async (req, res) => {
         
         const cart = await Cart.findOneAndDelete({ userId: id });
 
+        const myCoupon = await Coupon.findOne({ code: coupon });
+
+        myCoupon.users.set(id, true);
+
+        await myCoupon.save();
+
 
         res.json({
             msg: 'success',
         });
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({msg: error});
     }
 }
 
@@ -145,6 +190,7 @@ export const getOrdersByUser = async (req, res) => {
         const orders = await Order.find({ userId });
 
 
+    
 
         res.status(200).json({ orders });
     } catch (error) {

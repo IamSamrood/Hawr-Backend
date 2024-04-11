@@ -1,7 +1,11 @@
 import mongoose from "mongoose";
 
 const userSchema = mongoose.Schema({
-    userName: {
+    firstName: {
+        type: String,
+        required: true,
+    },
+    lastName: {
         type: String,
         required: true,
     },
@@ -21,6 +25,10 @@ const userSchema = mongoose.Schema({
     },
     profilePic: {
         type: String,
+    },
+    gender: {
+        type: String,
+        enum: ['Male', 'Female',],
     },
 })
 const User = mongoose.model("User", userSchema);

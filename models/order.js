@@ -84,6 +84,12 @@ const orderSchema = new Schema({
         type: String,
         enum: ['Placed', 'Packed', 'Shipped', 'Out for the delivery', 'Delivered'],
     },
+    coupon: {
+        type: String
+    },
+    couponDiscount: {
+        type: Number,
+    }
     
     // Other fields you may want to include
 });

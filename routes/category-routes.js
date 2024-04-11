@@ -1,6 +1,4 @@
 import { Router } from "express";
-import Category from "../models/category.js";
-import Product from "../models/product.js";
 import { addCategory, getAllCategories, getCategories, getCategoriesByProduct, updateCategory,  } from "../controller/category-controller.js";
 
 const router = Router();

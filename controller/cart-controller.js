@@ -4,13 +4,15 @@ import Cart from "../models/cart.js";
 
 export const addToCart = async (req, res) => {
     try {
-        const { productId, quantity, size } = req.body;
+        const { productId, quantity, size, price, actualPrice } = req.body;
         const { id } = req.user;
+
+       
 
         let cart = await Cart.findOne({ userId: id });
 
         if (!cart) {
-            cart = new Cart({ userId: id, items: [{ productId, quantity, size }] });
+            cart = new Cart({ userId: id, items: [{ productId, quantity, size, price, actualPrice }] });
         } else {
 
             const itemIndex = cart.items.findIndex(item => item.productId.equals(new mongoose.Types.ObjectId(productId)) && item.size === size);
@@ -29,7 +31,7 @@ export const addToCart = async (req, res) => {
                     cart.items[itemIndex].quantity += quantity;
                 }
             } else {
-                cart.items.push({ productId, quantity, size });
+                cart.items.push({ productId, quantity, size, price, actualPrice });
             }
         }
 
@@ -44,6 +46,7 @@ export const addToCart = async (req, res) => {
 
 export const getCartByUser = async (req, res) => {
     try {
+        
         const { id } = req.user;
 
         const cart = await Cart.findOne({ userId:id }).populate('items.productId');

@@ -10,7 +10,9 @@ const productSchema = new mongoose.Schema({
     sizes: {
         type: [{
             name: String,
-            quantity: Number
+            quantity: Number,
+            price: Number,
+            actualPrice: Number
         }],
         required: true
     },
@@ -30,18 +32,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    price: {
-        type: Number,
-        required: true
-    },
     offer: {
         type: Number,
         required: true,
         default:0,
-    },
-    actualPrice: {
-        type: Number,
-        required: true
     },
     category: {
         type: mongoose.Schema.Types.ObjectId,

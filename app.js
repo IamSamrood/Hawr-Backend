@@ -13,6 +13,7 @@ import fileRoutes from './routes/fileUpload-routes.js';
 import userRoutes from './routes/user-routes.js';
 import cartRoutes from './routes/cart-routes.js';
 import orderRoutes from './routes/order-routes.js';
+import couponRoutes from './routes/coupon-routes.js';
 
 const port = process.env.PORT || 3000;
 
@@ -99,6 +100,7 @@ app.use('/product', productRoutes);
 app.use('/categroy', categroyRoutes);
 app.use('/cart', cartRoutes);
 app.use('/order', orderRoutes);
+app.use('/coupon', couponRoutes);
 app.use('/file', fileRoutes);
 
 
