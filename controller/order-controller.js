@@ -40,13 +40,20 @@ export const createOrder = async (req, res) => {
         });
 
 
+      
             
         // Calculate the total amount
-        const totalAmount = cart.items.reduce((total, item) => {
+        const total = cart.items.reduce((tot, item) => {
             // Add the price of the item to the total
-            return total + (item.price * item.quantity);
+            return tot + (item.price * item.quantity);
         }, 0);
 
+
+        // Calculate the Gst
+
+        const gst = total * 18 / 100;
+
+        const totalAmount = total + gst + 50;
 
         // Calculate the total discount
         const discount = cart.items.reduce((total, item) => {
@@ -110,7 +117,7 @@ export const createOrder = async (req, res) => {
         if (paymentMethod === 'razorpay') {
             // If order is saved successfully, create an order in Razorpay
              orderObj = await razorpay.orders.create({
-                amount: totalAmount * 100, // Assuming you have a function to calculate order amount
+                amount: savedOrder?.totalAmount * 100, // Assuming you have a function to calculate order amount
                 currency: 'INR', // Change to your currency
                 receipt: savedOrder._id.toString() // Use order ID as receipt ID
             });
@@ -187,7 +194,7 @@ export const getOrdersByUser = async (req, res) => {
     try {
         const userId = req.user.id;  
         
-        const orders = await Order.find({ userId });
+        const orders = await Order.find({ userId }).sort({createdAt: -1});
 
 
     
@@ -213,4 +220,55 @@ export const getOrderById = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch orders" });
     }
 };
+
+export const getAllOrders = async (req, res) => {
+    try {
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Search parameter
+        const searchQuery = req.query.search || '';
+
+        // Building query
+        const query = {};
+        if (searchQuery) {
+            query.name = { $regex: new RegExp(searchQuery, 'i') }; // Case-insensitive search
+        }
+
+        // Fetching categories with pagination and search
+        const orders = await Order.find(query).skip(skip).limit(limit);
+        const totalOrders = await Order.countDocuments(query);
+
+        // Sending response
+        res.status(200).json({
+            orders,
+            currentPage: page,
+            total: totalOrders
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+}
+
+export const updateOrderStatus = async (req, res) => {
+    try {
+
+        let id = req.params.id;
+
+        let order = await Order.findByIdAndUpdate(id, {
+            deliveryStatus: req.body.status
+        });
+
+        res.status(201).json({
+            order,
+        })
+        
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+}
 

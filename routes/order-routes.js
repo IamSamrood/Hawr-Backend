@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/auth.js";
-import { createOrder, getOrderById, getOrdersByUser, paymentSuccess } from "../controller/order-controller.js";
+import { createOrder, getAllOrders, getOrderById, getOrdersByUser, paymentSuccess, updateOrderStatus } from "../controller/order-controller.js";
 
 const router = Router();
 
+router.get('/', getAllOrders);
+router.put('/:id', updateOrderStatus);
 router.post('/place-order', verifyToken, createOrder);
 router.post('/success', verifyToken, paymentSuccess);
 router.get('/user-orders', verifyToken, getOrdersByUser);

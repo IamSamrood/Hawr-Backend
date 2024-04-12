@@ -92,7 +92,7 @@ const orderSchema = new Schema({
     }
     
     // Other fields you may want to include
-});
+}, { timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);
 
