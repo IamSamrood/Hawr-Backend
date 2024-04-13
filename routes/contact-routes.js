@@ -8,7 +8,7 @@ router.post('/', async (req, res) => {
         let content = req.body;
 
 
-        let EmailSend = await sendEmail(content);
+        let EmailSend = await sendEmail(content, 'contact');
 
         res.status(201).json({ message: 'Message send successfully' });
 

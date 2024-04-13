@@ -1,8 +1,8 @@
 import nodemailer from 'nodemailer';
-import generateEmail from '../helpers/template.js';
+import generateEmail, {appointmentRequest, appointmentStatus} from '../helpers/template.js';
 
 // Function to send email
-export async function sendEmail(data) {
+export async function sendEmail(data, type) {
     // Create a transporter object using SMTP transport
     const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -12,17 +12,42 @@ export async function sendEmail(data) {
         }
     });
 
-
     // Generate the HTML content for the email
-    const emailHtml = generateEmail(data);
+    let emailHtml;
+    let mailOptions;
 
-    // Email message options
-    const mailOptions = {
-        from: data.email,
-        to: 'contact@gnanaprakasam.com',
-        subject: 'Enquiry Email',
-        html: emailHtml,
-    };
+    if (type == 'request') {
+        emailHtml = appointmentRequest(data);
+        // Email message options
+        mailOptions = {
+            from: data.email,
+            to: 'muhammedresvan@gmail.com',
+            subject: 'Appointment Request',
+            html: emailHtml,
+        };
+    } else if (type == 'status') {
+        emailHtml = appointmentStatus(data);
+        // Email message options
+        mailOptions = {
+            from: 'muhammedresvan@gmail.com',
+            to: data.email,
+            subject: 'Appointment Status Changed',
+            html: emailHtml,
+        };
+    } else {
+        emailHtml = generateEmail(data);
+        mailOptions = {
+            from: data.email,
+            to: 'muhammedresvan@gmail.com',
+            subject: 'Enquiry Email',
+            html: emailHtml,
+        };
+    }
+
+
+
+
+    
 
     // Send email
     try {

@@ -1,3 +1,4 @@
+import { sendEmail } from "../helpers/Email.js";
 import Appointment from "../models/appointment.js";
 
 
@@ -19,6 +20,8 @@ export const bookAppointment = async (req, res) => {
 
         // Save the appointment to the database
         await appointment.save();
+
+        let emailSnd = await sendEmail({ name, email, date, time, department, doctor }, 'request')
 
         // Respond with success message
         res.status(201).json({ message: 'Appointment Submitted', appointment });
@@ -43,8 +46,11 @@ export const appointmentStatus = async (req, res) => {
         // Update the status
         appointment.status = status;
 
+
         // Save the updated appointment
         await appointment.save();
+
+        let emailSnd = await sendEmail(appointment, 'status')
 
         res.status(200).json({ message: 'Appointment status updated', appointment });
 
