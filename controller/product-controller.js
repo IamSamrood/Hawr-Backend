@@ -115,6 +115,11 @@ export const getProducts = async (req, res) => {
         // Aggregate pipeline for summing quantities in sizes array
         const aggregatePipeline = [
             { $match: query },
+            {
+                $addFields: {
+                    size: "$sizes" // Rename sizes array to size field
+                }
+            },
             { $unwind: "$sizes" },
             {
                 $group: {
