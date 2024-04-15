@@ -144,11 +144,43 @@ export const getProducts = async (req, res) => {
             }
         ];
 
+        // Aggregate pipeline for summing quantities in sizes array
+        const aggregatePipelineCount = [
+            { $match: query },
+            { $unwind: "$sizes" },
+            {
+                $group: {
+                    _id: "$_id",
+                    product: { $first: "$$ROOT" }, // Include all fields from the product document
+                    quantitySum: { $sum: "$sizes.quantity" } // Calculate sum of quantities
+                }
+            },
+            { $match: availQuery }, // Filter based on sum of quantities
+            { $sort: sort },
+            {
+                $lookup: {
+                    from: "categories", // Name of the category collection
+                    localField: "product.category", // Field in the current collection
+                    foreignField: "_id", // Field in the category collection
+                    as: "product.category" // Name for the joined field
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: {
+                        $mergeObjects: ["$product", { category: { $arrayElemAt: ["$product.category", 0] } }]
+                    }
+                }
+            }
+        ];
+
+
       
       
 
         // Fetching products with pagination, search, and filters using aggregation
         const products = await Product.aggregate(aggregatePipeline);
+        const productsCount = await Product.aggregate(aggregatePipelineCount);
 
         
 
@@ -156,7 +188,7 @@ export const getProducts = async (req, res) => {
         res.status(200).json({
             products: products,
             currentPage: page,
-            total: products.length // Total count is the count of fetched products
+            total: productsCount.length // Total count is the count of fetched products
         });
     } catch (err) {
         console.error(err);
