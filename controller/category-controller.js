@@ -73,25 +73,25 @@ export const addCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
     try {
         const categoryId = req.params.id;
-        const { name, image } = req.body;
+        const { image, category } = req.body;
 
         // Find the category by ID
-        let category = await Category.findById(categoryId);
+        let categoryExist = await Category.findById(categoryId);
 
         // Check if category exists
-        if (!category) {
+        if (!categoryExist) {
             return res.status(404).json({ message: 'Category not found' });
         }
 
         // Update category fields
-        category.name = name;
-        category.image = image;
+        categoryExist.category = category;
+        categoryExist.image = image;
 
         // Save updated category to database
-        await category.save();
+        await categoryExist.save();
 
         // Send success response
-        res.status(200).json({ message: 'Category updated successfully', category });
+        res.status(200).json({ message: 'Category updated successfully', categoryExist });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
