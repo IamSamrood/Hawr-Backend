@@ -21,8 +21,8 @@ export const addProduct = async (req, res) => {
             newProductData.offer = offer;
             newProductData.sizes = sizes.map(size => ({
                 ...size,
-                actualPrice: size.price,
-                price: size.price - (size.price * offer / 100),
+                actualPrice: parseInt(size.price).toFixed(2),
+                price: (size.price - (size.price * offer / 100)).toFixed(2),
             }));
         }
 
@@ -253,3 +253,44 @@ export const getProductById = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 }
+
+export const updateProduct = async (req, res) => {
+    try {
+        // Extract product details from request body
+        const { productId, name, sizes, description, images, code, category, offer } = req.body;
+
+        // Find the product by ID
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Update product data with new values
+        product.name = name;
+        product.sizes = sizes;
+        product.description = description;
+        product.images = images;
+        product.code = code;
+        product.category = category;
+
+        // Update offer if it exists in the request body
+        if (offer !== undefined) {
+            product.offer = offer;
+            product.sizes = sizes.map(size => ({
+                ...size,
+                actualPrice: parseInt(size.price).toFixed(2),
+                price: (size.price - (size.price * offer / 100)).toFixed(2),
+            }));
+        }
+
+        // Save the updated product to the database
+        await product.save();
+
+        // Send success response
+        res.status(200).json({ message: 'Product updated successfully', product });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
