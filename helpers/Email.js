@@ -22,7 +22,7 @@ export async function sendEmail(data, type) {
         mailOptions = {
             from: data.email,
             to: 'muhammedresvan@gmail.com',
-            subject: 'Appointment Request',
+            subject: 'Appointment Request Recieved',
             html: emailHtml,
         };
     } else if (type == 'status') {
@@ -34,7 +34,18 @@ export async function sendEmail(data, type) {
             subject: 'Appointment Status Changed',
             html: emailHtml,
         };
-    } else {
+    } else if (type == 'request for patient') {
+        emailHtml = appointmentRequest(data);
+        // Email message options
+        mailOptions = {
+            from: 'muhammedresvan@gmail.com',
+            to: data.email,
+            subject: 'Appointment Request Submitted',
+            html: emailHtml,
+        };
+    }
+    
+    else {
         emailHtml = generateEmail(data);
         mailOptions = {
             from: data.email,

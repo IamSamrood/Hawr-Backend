@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
         required: true
+    },
+    deleted: {
+        type: Boolean,
+        default: false
     }
 });
 

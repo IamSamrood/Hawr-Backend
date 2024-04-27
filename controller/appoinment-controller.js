@@ -21,7 +21,8 @@ export const bookAppointment = async (req, res) => {
         // Save the appointment to the database
         await appointment.save();
 
-        let emailSnd = await sendEmail({ name, email, date, time, department, doctor }, 'request')
+        let emailSnd = await sendEmail({ name, email, date, time, department, doctor }, 'request');
+        let patientEmail = await sendEmail({ name, email, date, time, department, doctor }, 'request for patient');
 
         // Respond with success message
         res.status(201).json({ message: 'Appointment Submitted', appointment });

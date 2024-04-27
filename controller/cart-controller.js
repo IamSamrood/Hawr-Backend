@@ -49,11 +49,19 @@ export const getCartByUser = async (req, res) => {
         
         const { id } = req.user;
 
-        const cart = await Cart.findOne({ userId:id }).populate('items.productId');
+        const cart = await Cart.findOne({ userId: id }).populate('items.productId');
+        
+
 
         if (!cart) {
             return res.status(404).json({ message: 'Cart not found' });
         }
+
+        // Remove products with deleted flag set to true from the cart
+        cart.items = cart.items.filter(item => !item.productId.deleted);
+
+        // Save the updated cart
+        await cart.save();
 
         res.status(200).json({ cart });
     } catch (error) {
