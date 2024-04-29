@@ -147,6 +147,10 @@ export const appointmentRequest = (content) => {
                                                             <td style="padding: 5px 0;">Doctor</td>
                                                             <td align="right" style="padding: 5px 0;">${content.doctor}</td>
                                                         </tr>
+                                                         <tr>
+                                                            <td style="padding: 5px 0;">Status</td>
+                                                            <td align="right" style="padding: 5px 0;">${content.status}</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </td>
