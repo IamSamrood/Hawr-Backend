@@ -1,20 +1,10 @@
 import mongoose from "mongoose";
 
-
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
         unique: true
-    },
-    sizes: {
-        type: [{
-            name: String,
-            quantity: Number,
-            price: Number,
-            actualPrice: Number
-        }],
-        required: true
     },
     description: {
         type: String,
@@ -28,18 +18,29 @@ const productSchema = new mongoose.Schema({
         type: [String],
         required: true
     },
-    code: {
-        type: String,
-        required: true
-    },
     offer: {
         type: Number,
         default:0,
     },
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
+    price: {
+        type: Number,
+        default: false
+    },
+    duration: {
+        type: String,
+        default: false
+    },
+    schedule: {
+        type: String,
+        default: false
+    },
+    ageGroup: {
+        type: String,
+        default: false
+    },
+    topicsCovered: {
+        type: [String],
+        default: false
     },
     deleted: {
         type: Boolean,

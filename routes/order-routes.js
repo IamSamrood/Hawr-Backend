@@ -6,10 +6,9 @@ const router = Router();
 
 router.get('/', getAllOrders);
 router.put('/:id', updateOrderStatus);
-router.post('/place-order', verifyToken, createOrder);
-router.post('/success', verifyToken, paymentSuccess);
+router.post('/place-order',  createOrder);
+router.post('/success', paymentSuccess);
 router.get('/user-orders', verifyToken, getOrdersByUser);
 router.get('/order-id', verifyToken, getOrderById);
-
 
 export default router;

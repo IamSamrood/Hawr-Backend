@@ -14,10 +14,6 @@ const addressSchema = new Schema({
     company: {
         type: String
     },
-    country: {
-        type: String,
-        required: true
-    },
     email: {
         type: String,
         required: true
@@ -48,12 +44,15 @@ const addressSchema = new Schema({
 });
 
 const orderSchema = new Schema({
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User', 
-        required: true
+    // userId: {
+    //     type: String,
+    //     required: true
+    // },
+    name: { type: String},
+    email: { type: String},
+    item: {
+        type: Object,
     },
-    items: [{ }],
     address: {
         type: addressSchema,
         required: true
@@ -71,9 +70,6 @@ const orderSchema = new Schema({
     totalAmount: {
         type: Number
     },
-    totalDiscount: {
-        type:Number
-    },
     razorpayPaymentId: {
         type: String
     },
@@ -84,13 +80,6 @@ const orderSchema = new Schema({
         type: String,
         enum: ['Placed', 'Packed', 'Shipped', 'Out for the delivery', 'Delivered'],
     },
-    coupon: {
-        type: String
-    },
-    couponDiscount: {
-        type: Number,
-    }
-    
     // Other fields you may want to include
 }, { timestamps: true });
 

@@ -1,8 +1,6 @@
 import { extractPublicId } from "cloudinary-build-url";
 import cloudinary from "../config/cloudinary.js";
 
-
-
 export const uploadFile = async (req, res) => {
     try {
 
@@ -32,8 +30,6 @@ export const uploadFile = async (req, res) => {
 export const uploadFiles = async (req, res) => {
     try {
 
-
-
         if (req.body.removed instanceof Array) {
             for (const file of req.body.removed) {
                 const publicId = extractPublicId(file);
@@ -43,8 +39,6 @@ export const uploadFiles = async (req, res) => {
             const publicId = extractPublicId(req.body.removed);
             const result = await cloudinary.uploader.destroy(publicId);
         }
-        
-        
 
         const { folder } = req.body;
         let fileUrls = [];

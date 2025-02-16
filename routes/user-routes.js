@@ -9,5 +9,4 @@ router.post('/login', login);
 router.get('/profile', verifyToken, getUserProfile);
 router.put('/profile', verifyToken, updateUserProfile)
 
-
 export default router;

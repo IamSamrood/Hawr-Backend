@@ -1,73 +1,41 @@
-import Cart from "../models/cart.js";
 import Order from "../models/order.js";
 import Razorpay from "razorpay";
 import crypto from 'crypto';
-import Coupon from "../models/coupon.js";
-
+import Product from "../models/product.js";
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-
 export const createOrder = async (req, res) => {
     try {
-        const { id } = req.user;
+        // const { id } = req.user;
         const {
             apartment, city,
             company, country,
             email, firstName,
             lastName, note,
             phone, pincode,
-            street, paymentMethod, coupon
+            street, paymentMethod, coupon,
+            productId
         } = req.body;
 
-        const cart = await Cart.findOne({ userId: id })
-                                .populate('items.productId');
-        // Extracting complete product data from the cart
-        const items = cart.items.map(cartItem => {
-            return {
-                productId: cartItem.productId._id,
-                name: cartItem.productId.name,
-                price: cartItem.price,
-                actualPrice: cartItem.actualPrice,
-                images: cartItem.productId.images,
-                code: cartItem.productId.code,
-                quantity: cartItem.quantity,
-                size: cartItem.size
-            };
-        });
-
-
-      
-            
+        const item = await Product.findById(productId)
         // Calculate the total amount
-        const total = cart.items.reduce((tot, item) => {
-            // Add the price of the item to the total
-            return tot + (item.price * item.quantity);
-        }, 0);
-
+        const total = item.price
 
         // Calculate the Gst
-
         const gst = total * 18 / 100;
 
-        const totalAmount = total + gst + 50;
+        console.log("🚀 ~ createOrder ~ total + gst + 50:", total + gst + 50)
+        const totalAmount = (total + gst + 50).toFixed(2) ;
+        // const totalAmount = Math.round((total + gst + 50)) * 100;
 
-        // Calculate the total discount
-        const discount = cart.items.reduce((total, item) => {
-
-            // Calculate the discount for the item and add it to the total
-            return total + ((item.actualPrice - item.price) * item.quantity);
-        }, 0);
-
-
-        
-
-        let orederObject = {
-            userId: id,
-            items,
+        let orderObject = {
+            name: firstName,
+            email: email,
+            item,
             address: {
                 apartment,
                 city,
@@ -84,60 +52,34 @@ export const createOrder = async (req, res) => {
             paymentMethod,
             note,
             totalAmount,
-            totalDiscount: discount,
-              
+            // totalDiscount: discount,
         }
 
         if (paymentMethod == 'cashOnDelivery') {
-            orederObject.deliveryStatus = 'Placed';
+            orderObject.deliveryStatus = 'Placed';
         }
 
-        if (coupon) {
-            let getCoupon = await Coupon.findOne({ code: coupon });
-            
-            if (getCoupon) {
-
-                let coupondis = totalAmount * getCoupon.offer / 100;
-
-                orederObject.totalAmount = totalAmount - coupondis;
-                orederObject.couponDiscount = coupondis;
-                orederObject.coupon = getCoupon.code;
-
-            }
-
-        }
-
-        const order = new Order(orederObject);
-
+        const order = new Order(orderObject);
         const savedOrder = await order.save();
-
 
         let orderObj = {};
 
         if (paymentMethod === 'razorpay') {
+            console.log("🚀 ~ createOrder ~ paymentMethod:", paymentMethod)
             // If order is saved successfully, create an order in Razorpay
-             orderObj = await razorpay.orders.create({
+            orderObj = await razorpay.orders.create({
                 amount: savedOrder?.totalAmount * 100, // Assuming you have a function to calculate order amount
                 currency: 'INR', // Change to your currency
                 receipt: savedOrder._id.toString() // Use order ID as receipt ID
             });
         } else {
             orderObj.id = savedOrder._id;
-
-            const deleteCart = await Cart.findOneAndDelete({ userId: id });
-
-            const myCoupon = await Coupon.findOne({ code: coupon });
-
-            myCoupon.users.set(id, true);
-
-            await myCoupon.save();
         }
-        
-        
+
         res.status(201).json({
             order: savedOrder,
             orderObjId: orderObj.id,
-            amount:orderObj.amount,
+            amount: orderObj.amount,
         });
     } catch (err) {
         console.log(err);
@@ -155,7 +97,6 @@ export const paymentSuccess = async (req, res) => {
             coupon
         } = req.body;
 
-
         const { id } = req.user;
 
         const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
@@ -170,34 +111,21 @@ export const paymentSuccess = async (req, res) => {
                 status: 'completed',
                 razorpayPaymentId: razorpay_payment_id,
                 razorpayOrderId: razorpay_order_id,
-                deliveryStatus:'Placed'
+                deliveryStatus: 'Placed'
             }, { new: true });
-        
-        const cart = await Cart.findOneAndDelete({ userId: id });
 
-        const myCoupon = await Coupon.findOne({ code: coupon });
-
-        myCoupon.users.set(id, true);
-
-        await myCoupon.save();
-
-
-        res.json({
+            res.json({
             msg: 'success',
         });
     } catch (error) {
-        res.status(500).json({msg: error});
+        res.status(500).json({ msg: error });
     }
 }
 
 export const getOrdersByUser = async (req, res) => {
     try {
-        const userId = req.user.id;  
-        
-        const orders = await Order.find({ userId }).sort({createdAt: -1});
-
-
-    
+        const userId = req.user.id;
+        const orders = await Order.find({ userId }).sort({ createdAt: -1 });
 
         res.status(200).json({ orders });
     } catch (error) {
@@ -211,8 +139,6 @@ export const getOrderById = async (req, res) => {
         const orderId = req.query.id;
 
         const order = await Order.findById(orderId);
-
-
 
         res.status(200).json({ order });
     } catch (error) {
@@ -238,7 +164,7 @@ export const getAllOrders = async (req, res) => {
         }
 
         // Fetching categories with pagination and search
-        const orders = await Order.find(query).skip(skip).limit(limit);
+        const orders = await Order.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
         const totalOrders = await Order.countDocuments(query);
 
         // Sending response
@@ -265,7 +191,7 @@ export const updateOrderStatus = async (req, res) => {
         res.status(201).json({
             order,
         })
-        
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });

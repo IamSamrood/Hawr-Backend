@@ -3,47 +3,24 @@ import mongoose from 'mongoose';
 
 export const addProduct = async (req, res) => {
     try {
-        // Extract product details from request body
-        const { name, sizes, description, images, code, category, offer } = req.body;
+        const { name, price, description, images, duration, schedule, topicsCovered, ageGroup } = req.body;
+        const newProductData = { name, price, description, images, duration, schedule, topicsCovered, ageGroup };
 
-        // Create new product data object with required fields
-        const newProductData = {
-            name,
-            sizes,
-            description,
-            images,
-            code,
-            category,
-        };
-
-        // Add offer to new product data if it exists in the request body
-        if (offer !== undefined) {
-            newProductData.offer = offer;
-            newProductData.sizes = sizes.map(size => ({
-                ...size,
-                actualPrice: parseInt(size.price).toFixed(2),
-                price: (size.price - (size.price * offer / 100)).toFixed(2),
-            }));
-        }
-
-        // Create new product
         const newProduct = new Product(newProductData);
-
-        // Save product to database
         await newProduct.save();
 
-        // Send success response
         res.status(201).json({ message: 'Product created successfully', product: newProduct });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
     }
 }
+
 export const getProducts = async (req, res) => {
     try {
-        
         // Pagination parameters
         const page = parseInt(req.query.page) || 1;
+        console.log("🚀 ~ getProducts ~ page:", page)
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
@@ -70,30 +47,12 @@ export const getProducts = async (req, res) => {
             sort = { 'product.sizes.price': -1, 'product.name': 1 };
         }
 
-
         // Building initial match query
         const query = {};
 
         if (searchQuery) {
             query.name = { $regex: new RegExp(searchQuery, 'i') }; // Case-insensitive search
         }
-
-        if (categories.length > 0) {
-            query.category = { $in: categories.map(category => new mongoose.Types.ObjectId(category)) }; // Filter by categories
-        }
-
-        query.sizes = {
-            $elemMatch: {
-                price: { $gte: minPrice, $lte: maxPrice }
-            }
-        };
-
-        // Filter by sizes
-        if (sizes.length > 0) {
-            query.sizes = { $elemMatch: { name: { $in: sizes } } };
-        }
-
-
 
         let availQuery = {}
 
@@ -107,25 +66,15 @@ export const getProducts = async (req, res) => {
             }
         }
 
-
-
-
-
-        
         // Aggregate pipeline for summing quantities in sizes array
+        console.log("🚀 ~ getProducts ~ query:", query)
         const aggregatePipeline = [
             { $match: query },
-            {
-                $addFields: {
-                    size: "$sizes" // Rename sizes array to size field
-                }
-            },
-            { $unwind: "$sizes" },
+            
             {
                 $group: {
                     _id: "$_id",
                     product: { $first: "$$ROOT" }, // Include all fields from the product document
-                    quantitySum: { $sum: "$sizes.quantity" } // Calculate sum of quantities
                 }
             },
             { $match: availQuery }, // Filter based on sum of quantities
@@ -134,16 +83,16 @@ export const getProducts = async (req, res) => {
             { $limit: limit },
             {
                 $lookup: {
-                    from: "categories", // Name of the category collection
-                    localField: "product.category", // Field in the current collection
+                    from: "categories", // Name of the category collection 
+                    localField: "product.category", // Field in the current collection 
                     foreignField: "_id", // Field in the category collection
-                    as: "product.category" // Name for the joined field
+                    as: "product.category" // Name for the joined field 
                 }
             },
             {
                 $replaceRoot: {
                     newRoot: {
-                        $mergeObjects: ["$product", { category: { $arrayElemAt: ["$product.category", 0] } }]
+                        $mergeObjects: ["$product"]
                     }
                 }
             }
@@ -152,42 +101,26 @@ export const getProducts = async (req, res) => {
         // Aggregate pipeline for summing quantities in sizes array
         const aggregatePipelineCount = [
             { $match: query },
-            { $unwind: "$sizes" },
             {
                 $group: {
                     _id: "$_id",
                     product: { $first: "$$ROOT" }, // Include all fields from the product document
-                    quantitySum: { $sum: "$sizes.quantity" } // Calculate sum of quantities
                 }
             },
             { $match: availQuery }, // Filter based on sum of quantities
             { $sort: sort },
             {
-                $lookup: {
-                    from: "categories", // Name of the category collection
-                    localField: "product.category", // Field in the current collection
-                    foreignField: "_id", // Field in the category collection
-                    as: "product.category" // Name for the joined field
-                }
-            },
-            {
                 $replaceRoot: {
                     newRoot: {
-                        $mergeObjects: ["$product", { category: { $arrayElemAt: ["$product.category", 0] } }]
+                        $mergeObjects: ["$product"]
                     }
                 }
             }
         ];
 
-
-      
-      
-
         // Fetching products with pagination, search, and filters using aggregation
         const products = await Product.aggregate(aggregatePipeline);
         const productsCount = await Product.aggregate(aggregatePipelineCount);
-
-        
 
         // Sending response
         res.status(200).json({
@@ -200,6 +133,7 @@ export const getProducts = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 }
+
 export const getUniqueProductSizes = async (req, res) => {
     try {
         // Aggregate pipeline to get unique product sizes
@@ -222,7 +156,7 @@ export const getUniqueProductSizes = async (req, res) => {
             }
         ]);
 
-        
+
         // Send the unique sizes as the response
         res.status(200).json({
             uniqueSizes,
@@ -231,7 +165,6 @@ export const getUniqueProductSizes = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 }
-
 
 export const getProductById = async (req, res) => {
     try {
@@ -257,7 +190,8 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
     try {
         // Extract product details from request body
-        const { productId, name, sizes, description, images, code, category, offer } = req.body;
+        const { productId, name, description, images, duration, schedule, topicsCovered, ageGroup, price } = req.body;
+        console.log("🚀 ~ updateProduct ~ price:", price)
 
         // Find the product by ID
         const product = await Product.findById(productId);
@@ -268,27 +202,32 @@ export const updateProduct = async (req, res) => {
 
         // Update product data with new values
         product.name = name;
-        product.sizes = sizes;
+        product.price = price;
         product.description = description;
         product.images = images;
-        product.code = code;
-        product.category = category;
-
-        // Update offer if it exists in the request body
-        if (offer !== undefined) {
-            product.offer = offer;
-            product.sizes = sizes.map(size => ({
-                ...size,
-                actualPrice: parseInt(size.price).toFixed(2),
-                price: (size.price - (size.price * offer / 100)).toFixed(2),
-            }));
-        }
+        product.duration = duration;
+        product.schedule = schedule;
+        product.topicsCovered = topicsCovered;
+        product.ageGroup = ageGroup;
 
         // Save the updated product to the database
         await product.save();
 
         // Send success response
         res.status(200).json({ message: 'Product updated successfully', product });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+export const deleteProduct = async (req, res) => {
+    try {
+        const productId = req.params.productId;
+
+        console.log("🚀 ~ deleteProduct ~ productId:", productId)
+        await Product.deleteOne({ _id: productId });
+        // Send success response
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server Error' });
