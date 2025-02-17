@@ -17,7 +17,7 @@ export const createOrder = async (req, res) => {
             email, firstName,
             lastName, note,
             phone, pincode,
-            street, paymentMethod, coupon,
+            street, paymentMethod,
             productId
         } = req.body;
 
@@ -29,7 +29,7 @@ export const createOrder = async (req, res) => {
         const gst = total * 18 / 100;
 
         console.log("🚀 ~ createOrder ~ total + gst + 50:", total + gst + 50)
-        const totalAmount = (total + gst + 50).toFixed(2) ;
+        const totalAmount = (total + gst).toFixed(2) ;
         // const totalAmount = Math.round((total + gst + 50)) * 100;
 
         let orderObject = {
@@ -90,14 +90,11 @@ export const createOrder = async (req, res) => {
 export const paymentSuccess = async (req, res) => {
     try {
         const {
-            orderCreationId,
+            orderId,
             razorpay_payment_id,
             razorpay_order_id,
             razorpay_signature,
-            coupon
         } = req.body;
-
-        const { id } = req.user;
 
         const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
         shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
@@ -106,7 +103,7 @@ export const paymentSuccess = async (req, res) => {
         if (digest !== razorpay_signature)
             return res.status(400).json({ msg: 'Transaction not legit!' });
 
-        const order = await Order.findByIdAndUpdate(orderCreationId,
+        const order = await Order.findByIdAndUpdate(orderId,
             {
                 status: 'completed',
                 razorpayPaymentId: razorpay_payment_id,
